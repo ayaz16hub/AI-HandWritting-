@@ -9,29 +9,44 @@ from services.ocr_service import extract_text_from_image
 from services.handwriting_service import generate_handwriting_pdf
 
 
-
 app = FastAPI()
 
+# =========================
+# BASE PATHS (RENDER SAFE)
+# =========================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
-# Create folders automatically
-os.makedirs("uploads", exist_ok=True)
-os.makedirs("outputs", exist_ok=True)
 
-app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
+# Create folders safely
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+# Mount static only if folder exists (extra safety)
+if os.path.exists(OUTPUT_DIR):
+    app.mount(
+        "/outputs",
+        StaticFiles(directory=OUTPUT_DIR),
+        name="outputs"
+    )
+
+
+# =========================
+# ROUTES
+# =========================
 
 @app.get("/")
 def home():
     return {"message": "AI Handwriting Backend Running"}
 
+
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     try:
-
         # Unique filename
         unique_name = f"{uuid.uuid4()}_{file.filename}"
-        upload_path = f"uploads/{unique_name}"
+        upload_path = os.path.join(UPLOAD_DIR, unique_name)
 
         # Save uploaded file
         with open(upload_path, "wb") as buffer:
@@ -40,7 +55,7 @@ async def upload_file(file: UploadFile = File(...)):
         # OCR Extract
         extracted_text = extract_text_from_image(upload_path)
 
-        # Generate handwriting pdf
+        # Generate handwriting PDF
         output_pdf = generate_handwriting_pdf(extracted_text)
 
         pdf_url = f"https://ai-handwritting.onrender.com/outputs/{output_pdf}"

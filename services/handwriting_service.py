@@ -1,51 +1,27 @@
-from PIL import Image, ImageDraw, ImageFont
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+import uuid
 
+def generate_handwriting_pdf(text):
 
-def text_to_handwriting(text, output_path):
+    filename = f"{uuid.uuid4()}.pdf"
 
-    # Create white page
-    img = Image.new("RGB", (1240, 1754), "white")
-    draw = ImageDraw.Draw(img)
+    output_path = f"outputs/{filename}"
 
-    # ===== BORDER =====
-    draw.rectangle(
-        [(20, 20), (1220, 1734)],
-        outline=(180, 180, 180),
-        width=3
-    )
+    c = canvas.Canvas(output_path, pagesize=letter)
 
-    # ===== LEFT MARGIN LINE =====
-    draw.line(
-        [(120, 20), (120, 1734)],
-        fill=(255, 100, 100),
-        width=3
-    )
+    y = 750
 
-    # ===== HORIZONTAL NOTEBOOK LINES =====
-    y_line = 100
-
-    while y_line < 1700:
-        draw.line(
-            [(20, y_line), (1220, y_line)],
-            fill=(200, 220, 255),
-            width=2
-        )
-
-        y_line += 60
-
-    # ===== FONT =====
-    font = ImageFont.truetype("fonts/handwriting.ttf", 40)
-
-    # ===== TEXT START POSITION =====
-    x = 150
-    y = 50
-
-    # ===== DRAW TEXT =====
     for line in text.split("\n"):
-        draw.text((x, y), line, fill="black", font=font)
-        y += 60
 
-    # ===== SAVE IMAGE =====
-    img.save(output_path)
+        c.drawString(50, y, line)
 
-    return output_path
+        y -= 20
+
+        if y < 50:
+            c.showPage()
+            y = 750
+
+    c.save()
+
+    return filename

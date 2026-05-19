@@ -1,93 +1,57 @@
-from pickle import APPEND
-
-from fastapi import FastAPI, File, UploadFile
-import shutil
-import os
-import time
-
-from services.ocr_service import extract_text
-from services.handwriting_service import text_to_handwriting
-from services.pdf_service import image_to_pdf
-
-
+from fastapi import FastAPI, UploadFile, File
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+import shutil
+import uuid
+import os
 
-
-
-from fastapi.middleware.cors import CORSMiddleware
-
+from services.ocr_service import extract_text_from_image
+from services.handwriting_service import generate_handwriting_pdf
 
 app = FastAPI()
 
+# Create folders automatically
+os.makedirs("uploads", exist_ok=True)
+os.makedirs("outputs", exist_ok=True)
 
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
-
-
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-if __name__ == "__main__":
-    import uvicorn
-    
-
-UPLOAD_FOLDER = "uploads"
-OUTPUT_FOLDER = "outputs"
-
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+# Static files
+app.mount("/outputs", StaticFiles(directory="outputs"), name="outputs")
 
 @app.get("/")
-
 def home():
-    return {"message": "Backend Running Successfully 🚀"}
+    return {"message": "AI Handwriting Backend Running"}
 
-
-@app.post("/process-file/")
-async def process_file(file: UploadFile = File(...)):
-
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
     try:
-        print("1️⃣ Request received")
 
-        file_path = f"{UPLOAD_FOLDER}/{file.filename}"
+        # Unique filename
+        unique_name = f"{uuid.uuid4()}_{file.filename}"
+        upload_path = f"uploads/{unique_name}"
 
-        with open(file_path, "wb") as buffer:
+        # Save uploaded file
+        with open(upload_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        print("2️⃣ File saved")
+        # OCR Extract
+        extracted_text = extract_text_from_image(upload_path)
 
-        text = extract_text(file_path)
-        print("3️⃣ OCR done")
+        # Generate handwriting pdf
+        output_pdf = generate_handwriting_pdf(extracted_text)
 
-        hw_image = f"{OUTPUT_FOLDER}/handwritten_{int(time.time())}.png"
-        text_to_handwriting(text, hw_image)
-        print("4️⃣ handwriting done")
+        pdf_url = f"https://ai-handwritting.onrender.com/outputs/{output_pdf}"
 
-        pdf_path = f"{OUTPUT_FOLDER}/final.pdf"
-        image_to_pdf(hw_image, pdf_path)
-        print("5️⃣ PDF done")
-
-        return {
-           
-            "text": text,
-            "image": f"http://192.168.100.3:8000/{hw_image}",
-            "pdf": f"http://192.168.100.3:8000/{pdf_path}"
-        }
+        return JSONResponse({
+            "success": True,
+            "text": extracted_text,
+            "pdf_url": pdf_url
+        })
 
     except Exception as e:
-        print("🔥 ERROR:", str(e))
-        return {"error": str(e)}
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": str(e)
+            }
+        )

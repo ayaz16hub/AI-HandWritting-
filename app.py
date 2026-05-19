@@ -10,7 +10,8 @@ from services.handwriting_service import generate_handwriting_pdf
 
 app = FastAPI()
 
-
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 # Create folders automatically
 os.makedirs("uploads", exist_ok=True)
 os.makedirs("outputs", exist_ok=True)

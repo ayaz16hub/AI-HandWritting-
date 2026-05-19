@@ -16,8 +16,8 @@ OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 os.makedirs("uploads", exist_ok=True)
 os.makedirs("outputs", exist_ok=True)
 
-# Static files
-app.mount("/outputs", StaticFiles(directory="outputs"), name="outputs")
+app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
+
 
 @app.get("/")
 def home():

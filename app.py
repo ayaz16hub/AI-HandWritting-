@@ -8,6 +8,8 @@ import os
 from services.ocr_service import extract_text_from_image
 from services.handwriting_service import generate_handwriting_pdf
 
+
+
 app = FastAPI()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

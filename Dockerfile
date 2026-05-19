@@ -1,5 +1,7 @@
 FROM python:3.11
 
+RUN mkdir -p outputs
+RUN mkdir -p uploads
 RUN apt-get update && apt-get install -y tesseract-ocr
 
 WORKDIR /app

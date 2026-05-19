@@ -10,6 +10,7 @@ from services.handwriting_service import generate_handwriting_pdf
 
 app = FastAPI()
 
+
 # Create folders automatically
 os.makedirs("uploads", exist_ok=True)
 os.makedirs("outputs", exist_ok=True)

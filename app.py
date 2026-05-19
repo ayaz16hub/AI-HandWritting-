@@ -25,11 +25,8 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Mount static only if folder exists (extra safety)
 if os.path.exists(OUTPUT_DIR):
-    app.mount(
-        "/outputs",
-        StaticFiles(directory=OUTPUT_DIR),
-        name="outputs"
-    )
+  OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
 # =========================
